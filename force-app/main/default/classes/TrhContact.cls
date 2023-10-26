@@ -50,11 +50,11 @@ public class TrhContact {
         List<Account> accs = new List<Account>();      
         Boolean isActiveToUpdate;
 		
-        //1. Get the accout and contact ids
+        //1. Get the accout ids
         for(Contact c:  newList ){            
             executedRecords.add(c.Id);
             accIds.add(c.AccountId); // Collect all account ids
-           // conIds.add(c.Id); // Collect all contact ids
+           
             // Create a map of all contacts by their account ids to use later
             if(!ConByAccId.containsKey(c.AccountId)){
                 ConByAccId.put(c.AccountId, c );
