@@ -27,7 +27,7 @@ public class TrhAccount {
         List<Account> oldList = new List<Account>();
         List<Account> newList = new List<Account>();
         for(Account acc: newAccsById.values()  ){
-            // If the isActive flag is changed, only then execute the records 
+            // If the Activated flag is changed, only then execute the records 
             if( acc.Activated__c != oldAccsById.get(acc.Id).Activated__c  ){
                 newList.add(acc);
                 oldList.add(oldAccsById.get(acc.Id));
@@ -35,17 +35,18 @@ public class TrhAccount {
         }
         // Enter the handler only if the field is changed
         if(newList.size()> 0){
-            updateAccountsAndContacts( oldList, newList);
+            updateContacts( oldList, newList);
         }        
     }
     
-    public static void updateAccountsAndContacts(List<Account> oldList, List<Account> newList){
+    public static void updateContacts(List<Account> oldList, List<Account> newList){
         System.debug('---- Acc Trigger handler run ---->'+newList.size() );       
         Map<Id, Account> accByAccId = new Map<Id, Account>();
         Set<Id> accIds = new Set<Id>();       
         List<Contact> cons = new List<Contact>();
         Boolean isActiveToUpdate;
         
+        // 1. Get all the account ids
         for(Account acc:  newList ){            
             executedRecords.add(acc.Id);
             accIds.add(acc.Id);
@@ -55,18 +56,23 @@ public class TrhAccount {
             }
         }
         
+
+        // 2. Get all the contacts related to the account ids
         for(Contact con : [ SELECT AccountId, Activated__c from Contact where AccountId IN : accIds ]){
             isActiveToUpdate = accByAccId.get(con.AccountId).Activated__c;
             
+            // 3. filter the contacts once again to minimise the updates            
+            // Do not process the record if the status is already correct
             if(con.Activated__c != isActiveToUpdate){
                 con.Activated__c	= isActiveToUpdate;
                 cons.add(con);
             }
         }        
         
+        //4. Update contacts
         if(cons.size()>0){
             System.debug('---- to update cons ---->'+cons.size() );
-            update cons;
+            Database.update(cons, false); // Due to this update, the Contact trigger gets called
         }
     }
 }

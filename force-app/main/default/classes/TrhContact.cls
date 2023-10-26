@@ -31,7 +31,7 @@ public class TrhContact {
         for(Contact con: newConsById.values()  ){
             // This is an extra check so that the contacts which are already 
             // updated do not enter in to the handler once again
-			// If the isActive flag is changed, only then execute the records            
+			// If the Activated flag is changed, only then execute the records            
             if( con.Activated__c != oldConsById.get(con.Id).Activated__c  ){
                 newList.add(con);
                 oldList.add(oldConsById.get(con.Id));
@@ -39,24 +39,22 @@ public class TrhContact {
         }
         // Enter the handler only if the field is changed
         if(newList.size()> 0){
-            updateAccountsAndContacts( oldList, newList);
+            updateAccounts( oldList, newList);
         }
     }    
     
     
-    public static void updateAccountsAndContacts(List<Contact> oldList, List<Contact> newList){        
+    public static void updateAccounts(List<Contact> oldList, List<Contact> newList){        
         Map<Id, Contact> ConByAccId = new Map<Id, Contact>();
-        Set<Id> accIds = new Set<Id>();
-        Set<Id> conIds = new Set<Id>();
-        List<Account> accs = new List<Account>();
-        List<Contact> cons = new List<Contact>();
+        Set<Id> accIds = new Set<Id>();       
+        List<Account> accs = new List<Account>();      
         Boolean isActiveToUpdate;
 		
         //1. Get the accout and contact ids
         for(Contact c:  newList ){            
             executedRecords.add(c.Id);
             accIds.add(c.AccountId); // Collect all account ids
-            conIds.add(c.Id); // Collect all contact ids
+           // conIds.add(c.Id); // Collect all contact ids
             // Create a map of all contacts by their account ids to use later
             if(!ConByAccId.containsKey(c.AccountId)){
                 ConByAccId.put(c.AccountId, c );
@@ -77,29 +75,11 @@ public class TrhContact {
             }
         }        
         
-        //4. Update accounts first
+        //4. Update accounts
         if(accs.size()>0){
             System.debug('---- to update accs ---->'+accs.size() );
             Database.update(accs,false); // Due to this update, the Account trigger gets called
-        }
+        }        
         
-        
-        //5. Get the contacts based on the account ids; also skip updating the triggering contact records
-        for(Contact con : [ SELECT AccountId, Activated__c from Contact where AccountId IN : accIds AND  Id NOT IN : conIds ]){
-            
-            isActiveToUpdate = ConByAccId.get(con.AccountId).Activated__c;
-          	
-            //6. Extra filter to minimise the number of rows getting updated
-            if(con.Activated__c != isActiveToUpdate){
-                con.Activated__c = isActiveToUpdate;
-                cons.add(con);
-            }
-        }
-        
-        //6. Update contacts
-        if(cons.size()>0){
-            System.debug('---- to update cons ---->'+cons.size() );
-            Database.update(cons, false);
-        } 
     }
 }
